@@ -1,5 +1,6 @@
 VERSION=0.0.5
-LDFLAGS=-ldflags "-w -s -X main.version=${VERSION}"
+GITCOMMIT?=$(shell git describe --dirty --always)
+LDFLAGS=-ldflags "-w -s -X main.version=${VERSION} -X main.commit=${GITCOMMIT}"
 
 all: check-diff
 
@@ -12,12 +13,5 @@ linux: main.go
 	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o check-diff main.go
 
 check:
-	go test ./...
+	go test -v ./...
 
-fmt:
-	go fmt ./...
-
-tag:
-	git tag v${VERSION}
-	git push origin v${VERSION}
-	git push origin master

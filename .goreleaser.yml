@@ -1,18 +1,15 @@
 builds:
-  - binary: check-diff
+  - binary: mackerel-plugin-jsonl
+    main: ./cmd/mackerel-plugin-jsonl
     goos:
-      - darwin
       - linux
     goarch:
       - amd64
       - arm64
-    ignore:
-      - goos: darwin
-        goarch: arm64
 archives:
   - format: zip
     name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
 release:
   github:
-    owner: kazeburo
+    owner: monitoring-forge
     name: check-diff

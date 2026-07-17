@@ -1,37 +1,39 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
-	"crypto/md5"
+	"crypto/sha256"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
-	"regexp"
 	"runtime"
 	"strings"
 
+	"github.com/cubicdaiya/gonp"
 	"github.com/jessevdk/go-flags"
 	"github.com/mackerelio/checkers"
+	"github.com/mackerelio/golib/pluginutil"
 )
 
-// version by Makefile
 var version string
+var commit string
 
-type cmdOpts struct {
-	OptArgs       []string
-	OptCommand    string
-	OptIdentifier string `long:"identifier" description:"indetify a file store the command result with given string"`
-	OptWarn       bool   `short:"w" long:"warn" description:"Set the error level to warning"`
-	Version       bool   `short:"v" long:"version" description:"Show version"`
+type Opt struct {
+	Args       []string
+	Command    string
+	Identifier string `long:"identifier" description:"identify a file store the command result with given string"`
+	Warn       bool   `short:"w" long:"warn" description:"Set the error level to warning"`
+	Workdir    string `long:"workdir" description:"Set the working directory"`
+	Version    bool   `short:"v" long:"version" description:"Show version"`
 }
 
-func runCmd(curFile *os.File, opts cmdOpts) error {
-	cmd := exec.Command(opts.OptCommand, opts.OptArgs...)
+func (opt *Opt) cmd(file *os.File) error {
+	cmd := exec.Command(opt.Command, opt.Args...)
 	var stderr bytes.Buffer
-	cmd.Stdout = curFile
+	cmd.Stdout = file
 	cmd.Stderr = &stderr
 	if err := cmd.Start(); err != nil {
 		return err
@@ -43,8 +45,143 @@ func runCmd(curFile *os.File, opts cmdOpts) error {
 	return nil
 }
 
-func calcDiff(diffCmd, from, to string) ([]byte, error) {
-	return exec.Command(diffCmd, "-U", "1", from, to).Output()
+func (opt *Opt) run() *checkers.Checker {
+
+	hasher := sha256.New()
+	hasher.Write([]byte(opt.Identifier))
+	hasher.Write([]byte("-"))
+	hasher.Write([]byte(opt.Command))
+	hasher.Write([]byte("-"))
+	for _, v := range opt.Args {
+		hasher.Write([]byte(v))
+		hasher.Write([]byte("-"))
+	}
+	curUser, err := user.Current()
+	if err != nil {
+		return checkers.Critical(err.Error())
+	}
+
+	prevPath := filepath.Join(opt.Workdir, fmt.Sprintf("check-diff-%s-%x", curUser.Uid, hasher.Sum(nil)))
+	newFile, err := os.CreateTemp(opt.Workdir, "check-diff-")
+	if err != nil {
+		return checkers.Critical(err.Error())
+	}
+
+	err = opt.cmd(newFile)
+	if err != nil {
+		newFile.Close()
+		os.Remove(newFile.Name())
+		return checkers.Critical(err.Error())
+	}
+
+	err = newFile.Close()
+	if err != nil {
+		return checkers.Critical(err.Error())
+	}
+
+	if !fileExists(prevPath) {
+		err = os.Rename(newFile.Name(), prevPath)
+		if err != nil {
+			return checkers.Critical(err.Error())
+		}
+		msg := ""
+		if len(opt.Args) > 0 {
+			msg = fmt.Sprintf("first time execution command: '%s %s'", opt.Command, strings.Join(opt.Args, " "))
+		} else {
+			msg = fmt.Sprintf("first time execution command: '%s'", opt.Command)
+		}
+		return checkers.Ok(msg)
+	}
+
+	diff, err := diff(prevPath, newFile.Name())
+	if err != nil {
+		return checkers.Critical(err.Error())
+	}
+
+	err = os.Rename(newFile.Name(), prevPath)
+	if err != nil {
+		return checkers.Critical(err.Error())
+	}
+
+	if diff == "" {
+		msg, err := buildNoDifferenceMsg(prevPath)
+		if err != nil {
+			return checkers.Critical(err.Error())
+		}
+		return checkers.Ok(msg)
+	}
+	diffMsg := buildDiffMsg(diff)
+	if opt.Warn {
+		return checkers.Warning(diffMsg)
+	}
+	return checkers.Critical(diffMsg)
+}
+
+func buildNoDifferenceMsg(filename string) (string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	fileinfo, _ := file.Stat()
+	b := make([]byte, 128)
+	count, err := file.Read(b)
+	if err != nil {
+		return "", err
+	}
+	o := string(strings.TrimRight(string(b[0:count]), "\r\n"))
+	if fileinfo.Size() > 128 {
+		return fmt.Sprintf("no difference: ```%s...```", o), nil
+	}
+	return fmt.Sprintf("no difference: ```%s```", o), nil
+}
+
+func buildDiffMsg(diff string) string {
+	o := diff
+	if len(diff) > 512 {
+		o = diff[0:512]
+	}
+	o = strings.TrimRight(o, "\r\n")
+
+	if len(diff) > 512 {
+		return fmt.Sprintf("found difference: ```%s...```", o)
+	}
+	return fmt.Sprintf("found difference: ```%s```", o)
+}
+
+func getLines(filename string) ([]string, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	lines := make([]string, 0)
+	for scanner.Scan() {
+		lines = append(lines, scanner.Text())
+	}
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+	return lines, nil
+}
+
+func diff(prev, new string) (string, error) {
+	prevLines, err := getLines(prev)
+	if err != nil {
+		return "", err
+	}
+	newLines, err := getLines(new)
+	if err != nil {
+		return "", err
+	}
+
+	diff := gonp.New(prevLines, newLines)
+	diff.Compose()
+
+	return diff.SprintUniHunks(diff.UnifiedHunks()), nil
 }
 
 func fileExists(filename string) bool {
@@ -52,117 +189,23 @@ func fileExists(filename string) bool {
 	return err == nil
 }
 
-func checkDiff(opts cmdOpts) *checkers.Checker {
-	diffCmd, err := exec.LookPath("diff")
-	if err != nil {
-		return checkers.Critical(err.Error())
-	}
-
-	tmpDir := os.TempDir()
-
-	hasher := md5.New()
-	hasher.Write([]byte(opts.OptIdentifier))
-	hasher.Write([]byte(opts.OptCommand))
-	for _, v := range opts.OptArgs {
-		hasher.Write([]byte(v))
-	}
-	commandKey := fmt.Sprintf("%x", hasher.Sum(nil))
-
-	curUser, _ := user.Current()
-	prevPath := filepath.Join(tmpDir, "check-diff-"+curUser.Uid+"-"+commandKey)
-
-	curFile, err := ioutil.TempFile(tmpDir, "temp")
-	if err != nil {
-		return checkers.Critical(err.Error())
-	}
-
-	defer os.Remove(curFile.Name())
-
-	err = runCmd(curFile, opts)
-	if err != nil {
-		return checkers.Critical(err.Error())
-	}
-
-	if !fileExists(prevPath) {
-		err = os.Rename(curFile.Name(), prevPath)
-		if err != nil {
-			return checkers.Critical(err.Error())
-		}
-		msg := ""
-		if len(opts.OptArgs) > 0 {
-			msg = fmt.Sprintf("first time execution command: '%s %s'", opts.OptCommand, strings.Join(opts.OptArgs, " "))
-		} else {
-			msg = fmt.Sprintf("first time execution command: '%s'", opts.OptCommand)
-		}
-		return checkers.Ok(msg)
-	}
-
-	// diff
-	diffOut, diffError := calcDiff(diffCmd, prevPath, curFile.Name())
-	err = os.Rename(curFile.Name(), prevPath)
-	if err != nil {
-		return checkers.Critical(err.Error())
-	}
-
-	if diffError == nil {
-		// no difference
-		curOpen, err := os.Open(curFile.Name())
-		if err != nil {
-			return checkers.Critical(err.Error())
-		}
-		defer curOpen.Close()
-
-		fileinfo, _ := curOpen.Stat()
-		data := make([]byte, 128)
-		count, err := curOpen.Read(data)
-		if err != nil {
-			return checkers.Critical(err.Error())
-		}
-		cur := string(data[0:count])
-		cur = regexp.MustCompile("(\r\n|\r|\n)$").ReplaceAllString(cur, "")
-		msg := ""
-		if fileinfo.Size() > 128 {
-			msg = fmt.Sprintf("no difference: ```%s...```\n", cur)
-		} else {
-			msg = fmt.Sprintf("no difference: ```%s```\n", cur)
-		}
-		return checkers.Ok(msg)
-	} else if regexp.MustCompile("exit status 1").MatchString(diffError.Error()) {
-		// found diff
-		diffRet := strings.Split(string(diffOut), "\n")
-		diffRetString := strings.Join(diffRet[2:], "\n")
-		diffRetString = regexp.MustCompile("(\r\n|\r|\n)$").ReplaceAllString(diffRetString, "")
-		msg := ""
-		if len(diffRetString) > 512 {
-			msg = fmt.Sprintf("found difference: ```%s...```\n", diffRetString[0:512])
-		} else {
-			msg = fmt.Sprintf("found difference: ```%s```\n", diffRetString)
-		}
-		if opts.OptWarn {
-			return checkers.Warning(msg)
-		}
-		return checkers.Critical(msg)
-	}
-	return checkers.Critical(diffError.Error())
-}
-
-func printVersion() {
-	fmt.Printf(`%s %s
-Compiler: %s %s
-`,
-		os.Args[0],
-		version,
-		runtime.Compiler,
-		runtime.Version())
-}
-
 func main() {
-	opts := cmdOpts{}
-	psr := flags.NewParser(&opts, flags.HelpFlag|flags.PassDoubleDash)
+	opt := &Opt{}
+	psr := flags.NewParser(opt, flags.HelpFlag|flags.PassDoubleDash)
 	psr.Usage = "[OPTIONS] -- command args1 args2"
 	args, err := psr.Parse()
-	if opts.Version {
-		printVersion()
+	if opt.Version {
+		if commit == "" {
+			commit = "dev"
+		}
+		fmt.Printf(
+			"%s-%s\n%s/%s, %s, %s\n",
+			filepath.Base(os.Args[0]),
+			version,
+			runtime.GOOS,
+			runtime.GOARCH,
+			runtime.Version(),
+			commit)
 		os.Exit(0)
 	}
 	if err != nil {
@@ -173,12 +216,17 @@ func main() {
 		psr.WriteHelp(os.Stderr)
 		os.Exit(1)
 	}
-	opts.OptCommand = args[0]
+	opt.Args = []string{}
+	opt.Command = args[0]
 	if len(args) > 1 {
-		opts.OptArgs = args[1:]
+		opt.Args = args[1:]
 	}
 
-	ckr := checkDiff(opts)
+	if opt.Workdir == "" {
+		opt.Workdir = pluginutil.PluginWorkDir()
+	}
+
+	ckr := opt.run()
 	ckr.Name = "check-diff"
 	ckr.Exit()
 }
