@@ -24,7 +24,7 @@ var commit string
 type Opt struct {
 	Args       []string
 	Command    string
-	Identifier string `long:"identifier" description:"identify a file store the command result with given string"`
+	Identifier string `long:"identifier" description:"identify the file used to store the command result with the given string"`
 	Warn       bool   `short:"w" long:"warn" description:"Set the error level to warning"`
 	Workdir    string `long:"workdir" description:"Set the working directory"`
 	Version    bool   `short:"v" long:"version" description:"Show version"`
@@ -124,7 +124,10 @@ func buildNoDifferenceMsg(filename string) (string, error) {
 	}
 	defer file.Close()
 
-	fileinfo, _ := file.Stat()
+	fileinfo, err := file.Stat()
+	if err != nil {
+		return "", err
+	}
 	b := make([]byte, 128)
 	count, err := file.Read(b)
 	if err != nil {
@@ -158,6 +161,7 @@ func getLines(filename string) ([]string, error) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 64*1024), 10*1024*1024)
 	lines := make([]string, 0)
 	for scanner.Scan() {
 		lines = append(lines, scanner.Text())
