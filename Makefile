@@ -6,11 +6,11 @@ all: check-diff
 
 .PHONY: check-diff
 
-check-diff: main.go
-	go build $(LDFLAGS) -o check-diff main.go
+check-diff: main.go open_unix.go
+	go build $(LDFLAGS) -o check-diff open_unix.go main.go
 
-linux: main.go
-	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o check-diff main.go
+linux: main.go open_unix.go
+	GOOS=linux GOARCH=amd64 go build $(LDFLAGS) -o check-diff open_unix.go main.go
 
 check:
 	go test -v ./...

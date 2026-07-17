@@ -118,7 +118,7 @@ func (opt *Opt) run() *checkers.Checker {
 }
 
 func buildNoDifferenceMsg(filename string) (string, error) {
-	file, err := os.Open(filename)
+	file, err := openRD(filename)
 	if err != nil {
 		return "", err
 	}
@@ -151,7 +151,7 @@ func buildDiffMsg(diff string) string {
 }
 
 func getLines(filename string) ([]string, error) {
-	file, err := os.Open(filename)
+	file, err := openRD(filename)
 	if err != nil {
 		return nil, err
 	}
