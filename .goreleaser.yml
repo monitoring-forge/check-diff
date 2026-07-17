@@ -1,6 +1,5 @@
 builds:
-  - binary: mackerel-plugin-jsonl
-    main: ./cmd/mackerel-plugin-jsonl
+  - binary: check-diff
     goos:
       - linux
     goarch:
