@@ -47,4 +47,4 @@ command = "/usr/local/bin/check-diff -- cat /etc/passwd"
 
 ## Install
 
-Please download release page or `mkr plugin install kazeburo/check-diff`.
+Please download release page or `mkr plugin install monitoring-forge/check-diff`.
