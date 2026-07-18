@@ -47,15 +47,14 @@ func (opt *Opt) cmd(file *os.File) error {
 
 func (opt *Opt) run() *checkers.Checker {
 
+	identifier := strings.Join([]string{
+		opt.Identifier,
+		opt.Command,
+		strings.Join(opt.Args, "-"),
+	}, "-")
 	hasher := sha256.New()
-	hasher.Write([]byte(opt.Identifier))
-	hasher.Write([]byte("-"))
-	hasher.Write([]byte(opt.Command))
-	hasher.Write([]byte("-"))
-	for _, v := range opt.Args {
-		hasher.Write([]byte(v))
-		hasher.Write([]byte("-"))
-	}
+	hasher.Write([]byte(identifier))
+
 	curUser, err := user.Current()
 	if err != nil {
 		return checkers.Critical(err.Error())
@@ -84,13 +83,10 @@ func (opt *Opt) run() *checkers.Checker {
 		if err != nil {
 			return checkers.Critical(err.Error())
 		}
-		msg := ""
 		if len(opt.Args) > 0 {
-			msg = fmt.Sprintf("first time execution command: '%s %s'", opt.Command, strings.Join(opt.Args, " "))
-		} else {
-			msg = fmt.Sprintf("first time execution command: '%s'", opt.Command)
+			return checkers.Ok(fmt.Sprintf("first time execution command: '%s %s'", opt.Command, strings.Join(opt.Args, " ")))
 		}
-		return checkers.Ok(msg)
+		return checkers.Ok(fmt.Sprintf("first time execution command: '%s'", opt.Command))
 	}
 
 	diff, err := diff(prevPath, newFile.Name())
@@ -110,6 +106,7 @@ func (opt *Opt) run() *checkers.Checker {
 		}
 		return checkers.Ok(msg)
 	}
+
 	diffMsg := buildDiffMsg(diff)
 	if opt.Warn {
 		return checkers.Warning(diffMsg)
