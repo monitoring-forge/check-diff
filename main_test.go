@@ -11,24 +11,27 @@ import (
 	"github.com/mackerelio/checkers"
 )
 
-// Test cmd
-func TestCmd(t *testing.T) {
+func getCmdOpt(t *testing.T, command string, args []string) (Opt, *os.File) {
 	workdir := t.TempDir()
-	opt := Opt{
-		Command:    "echo",
-		Args:       []string{"Hello, World!"},
-		Identifier: "test",
-		Workdir:    workdir,
-	}
 	filename := filepath.Join(workdir, "test.txt")
 	file, err := os.Create(filename)
 	if err != nil {
 		t.Fatalf("Failed to create file: %v", err)
 	}
+	return Opt{
+		Command:    command,
+		Args:       args,
+		Identifier: "test",
+		Workdir:    workdir,
+	}, file
+}
+
+// Test cmd
+func TestCmd(t *testing.T) {
+	opt, file := getCmdOpt(t, "echo", []string{"Hello, World!"})
 	defer file.Close()
 
-	err = opt.cmd(file)
-	if err != nil {
+	if err := opt.cmd(file); err != nil {
 		t.Fatalf("cmd failed: %v", err)
 	}
 
@@ -46,56 +49,42 @@ func TestCmd(t *testing.T) {
 }
 
 func TestCmdFailedCase(t *testing.T) {
-	workdir := t.TempDir()
-	opt := Opt{
-		Command:    "nonexistent_command",
-		Args:       []string{},
-		Identifier: "test",
-		Workdir:    workdir,
-	}
-	filename := filepath.Join(workdir, "test.txt")
-	file, err := os.Create(filename)
-	if err != nil {
-		t.Fatalf("Failed to create file: %v", err)
-	}
+	opt, file := getCmdOpt(t, "nonexistent_command", []string{})
 	defer file.Close()
 
-	err = opt.cmd(file)
-	if err == nil {
+	if err := opt.cmd(file); err == nil {
 		t.Fatalf("Expected cmd to fail, but it succeeded")
 	}
 }
 
 func TestCmdFailedCommand(t *testing.T) {
-	workdir := t.TempDir()
-	opt := Opt{
-		Command:    "ls",
-		Args:       []string{"nonexistent_directory"},
-		Identifier: "test",
-		Workdir:    workdir,
-	}
-	filename := filepath.Join(workdir, "test.txt")
-	file, err := os.Create(filename)
-	if err != nil {
-		t.Fatalf("Failed to create file: %v", err)
-	}
+	opt, file := getCmdOpt(t, "ls", []string{"nonexistent_directory"})
 	defer file.Close()
-
-	err = opt.cmd(file)
-	if err == nil {
+	if err := opt.cmd(file); err == nil {
 		t.Fatalf("Expected cmd to fail, but it succeeded")
 	}
 }
 
-func TestBuildNoDifferenceMsg(t *testing.T) {
-	file, err := os.CreateTemp("", "testfile")
+func createTempFile(t *testing.T, content string) (*os.File, func()) {
+	tmpfile, err := os.CreateTemp("", "testfile")
 	if err != nil {
 		t.Fatalf("Failed to create temp file: %v", err)
 	}
-	defer os.Remove(file.Name())
-	defer file.Close()
+	if _, err := tmpfile.WriteString(content); err != nil {
+		t.Fatalf("Failed to write to temp file: %v", err)
+	}
+	if err := tmpfile.Close(); err != nil {
+		t.Fatalf("Failed to close temp file: %v", err)
+	}
+	return tmpfile, func() {
+		os.Remove(tmpfile.Name())
+	}
+}
+
+func TestBuildNoDifferenceMsg(t *testing.T) {
 	shortMsg := "This is a test message."
-	file.WriteString(shortMsg + "\n")
+	file, cleanup := createTempFile(t, shortMsg+"\n")
+	defer cleanup()
 	expected := "no difference: ```" + shortMsg + "```"
 	result, err := buildNoDifferenceMsg(file.Name())
 	if err != nil {
@@ -107,18 +96,11 @@ func TestBuildNoDifferenceMsg(t *testing.T) {
 }
 
 func TestBuildNoDifferenceMsgLargeResult(t *testing.T) {
-	file, err := os.CreateTemp("", "testfile")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	defer os.Remove(file.Name())
-	defer file.Close()
-	largeMsg := make([]byte, 600)
-	for i := range largeMsg {
-		largeMsg[i] = 'A'
-	}
-	file.Write(largeMsg)
-	expected := "no difference: ```" + string(largeMsg)[:128] + "...```"
+	largeMsg := strings.Repeat("A", 600)
+	file, cleanup := createTempFile(t, largeMsg+"\n")
+	defer cleanup()
+
+	expected := "no difference: ```" + largeMsg[:128] + "...```"
 	result, err := buildNoDifferenceMsg(file.Name())
 	if err != nil {
 		t.Fatalf("buildNoDifferenceMsg failed: %v", err)
@@ -138,33 +120,20 @@ func TestBuildDiffMsg(t *testing.T) {
 }
 
 func TestBuildDiffMsgLargeResult(t *testing.T) {
-	diff := make([]byte, 600)
-	for i := range diff {
-		diff[i] = 'A'
-	}
-	expected := "found difference: ```" + string(diff)[:512] + "...```"
-	result := buildDiffMsg(string(diff))
+	diff := strings.Repeat("A", 600)
+	expected := "found difference: ```" + diff[:512] + "...```"
+	result := buildDiffMsg(diff)
 	if result != expected {
 		t.Errorf("Expected %q, got %q", expected, result)
 	}
 }
 
 func TestDiff(t *testing.T) {
-	file1, err := os.CreateTemp("", "file1")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	defer os.Remove(file1.Name())
-	defer file1.Close()
-	file1.WriteString("Hello, World!\n")
+	file1, cleanup1 := createTempFile(t, "Hello, World!\n")
+	defer cleanup1()
 
-	file2, err := os.CreateTemp("", "file2")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	defer os.Remove(file2.Name())
-	defer file2.Close()
-	file2.WriteString("Hello, Go!\n")
+	file2, cleanup2 := createTempFile(t, "Hello, Go!\n")
+	defer cleanup2()
 
 	diffResult, err := diff(file1.Name(), file2.Name())
 	if err != nil {
@@ -179,21 +148,11 @@ func TestDiff(t *testing.T) {
 }
 
 func TestDiffNoDifference(t *testing.T) {
-	file1, err := os.CreateTemp("", "file1")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	defer os.Remove(file1.Name())
-	defer file1.Close()
-	file1.WriteString("Hello, World!\n")
+	file1, cleanup1 := createTempFile(t, "Hello, World!\n")
+	defer cleanup1()
 
-	file2, err := os.CreateTemp("", "file2")
-	if err != nil {
-		t.Fatalf("Failed to create temp file: %v", err)
-	}
-	defer os.Remove(file2.Name())
-	defer file2.Close()
-	file2.WriteString("Hello, World!\n")
+	file2, cleanup2 := createTempFile(t, "Hello, World!\n")
+	defer cleanup2()
 
 	diffResult, err := diff(file1.Name(), file2.Name())
 	if err != nil {
@@ -205,13 +164,8 @@ func TestDiffNoDifference(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	workdir := t.TempDir()
-	opt := Opt{
-		Command:    "echo",
-		Args:       []string{"Hello, World!"},
-		Identifier: "test",
-		Workdir:    workdir,
-	}
+	opt, file := getCmdOpt(t, "echo", []string{"Hello, World!"})
+	defer file.Close()
 	ckr := opt.run()
 	if ckr.Status != checkers.OK {
 		t.Errorf("Expected OK status, got %v", ckr.Status)
@@ -231,13 +185,8 @@ func TestRun(t *testing.T) {
 }
 
 func TestRunWithDifference(t *testing.T) {
-	workdir := t.TempDir()
-	opt := Opt{
-		Command:    "date",
-		Args:       []string{},
-		Identifier: "test",
-		Workdir:    workdir,
-	}
+	opt, file := getCmdOpt(t, "date", []string{})
+	defer file.Close()
 	// First run to create the initial state
 	opt.run()
 
