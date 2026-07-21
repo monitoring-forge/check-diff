@@ -1,5 +1,9 @@
 # Changelog
 
+## [v0.0.7](https://github.com/monitoring-forge/check-diff/compare/v0.0.6...v0.0.7) - 2026-07-21
+
+- ci: bump actions/checkout from 7.0.0 to 7.0.1 in the dependencies group by @dependabot[bot] in https://github.com/monitoring-forge/check-diff/pull/7
+
 ## [v0.0.6](https://github.com/monitoring-forge/check-diff/compare/v0.0.5...v0.0.6) - 2026-07-18
 
 - Refactor almost using gonp repository and transfer ownership by @kazeburo in https://github.com/monitoring-forge/check-diff/pull/3
