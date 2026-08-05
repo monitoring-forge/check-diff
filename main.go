@@ -145,12 +145,12 @@ func main() {
 	} else if flags.WroteHelp(err) {
 		fmt.Fprintf(os.Stdout, "%v\n", err)
 		os.Exit(OK)
+	} else if err != nil {
+		fmt.Fprintf(os.Stderr, "%v\n", err)
+		os.Exit(UNKNOWN)
 	} else if len(args) == 0 {
 		fmt.Fprintf(os.Stderr, "command is required\n")
 		psr.WriteHelp(os.Stderr)
-		os.Exit(UNKNOWN)
-	} else if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(UNKNOWN)
 	}
 
