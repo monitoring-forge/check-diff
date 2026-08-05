@@ -56,7 +56,7 @@ func buildNoDifferenceMsg(filename string) (string, error) {
 	}
 	b := make([]byte, 128)
 	count, err := file.Read(b)
-	if err != nil {
+	if err != nil && err != io.EOF {
 		return "", err
 	}
 	o := string(strings.TrimRight(string(b[0:count]), "\r\n"))
