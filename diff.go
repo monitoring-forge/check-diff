@@ -28,20 +28,20 @@ func getLines(filename string) ([]string, error) {
 	return lines, nil
 }
 
-func diff(prev, new string) (string, error) {
-	prevLines, err := getLines(prev)
-	if err != nil {
-		return "", err
-	}
-	newLines, err := getLines(new)
-	if err != nil {
-		return "", err
-	}
+func diff(prev, current string) (string, error) {
+    prevLines, err := getLines(prev)
+    if err != nil {
+        return "", err
+    }
+    newLines, err := getLines(current)
+    if err != nil {
+        return "", err
+    }
 
-	diff := gonp.New(prevLines, newLines)
-	diff.Compose()
+    d := gonp.New(prevLines, newLines)
+    d.Compose()
 
-	return diff.SprintUniHunks(diff.UnifiedHunks()), nil
+    return d.SprintUniHunks(d.UnifiedHunks()), nil
 }
 
 func buildNoDifferenceMsg(filename string) (string, error) {
