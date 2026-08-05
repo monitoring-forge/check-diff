@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/cubicdaiya/gonp"
