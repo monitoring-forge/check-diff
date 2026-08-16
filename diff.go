@@ -2,15 +2,17 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"strings"
 
 	"github.com/cubicdaiya/gonp"
+	"github.com/monitoring-forge/saferio"
 )
 
 func getLines(filename string) ([]string, error) {
-	file, err := openRD(filename)
+	file, err := saferio.OpenRD(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -29,23 +31,23 @@ func getLines(filename string) ([]string, error) {
 }
 
 func diff(prev, current string) (string, error) {
-    prevLines, err := getLines(prev)
-    if err != nil {
-        return "", err
-    }
-    newLines, err := getLines(current)
-    if err != nil {
-        return "", err
-    }
+	prevLines, err := getLines(prev)
+	if err != nil {
+		return "", err
+	}
+	newLines, err := getLines(current)
+	if err != nil {
+		return "", err
+	}
 
-    d := gonp.New(prevLines, newLines)
-    d.Compose()
+	d := gonp.New(prevLines, newLines)
+	d.Compose()
 
-    return d.SprintUniHunks(d.UnifiedHunks()), nil
+	return d.SprintUniHunks(d.UnifiedHunks()), nil
 }
 
 func buildNoDifferenceMsg(filename string) (string, error) {
-	file, err := openRD(filename)
+	file, err := saferio.OpenRD(filename)
 	if err != nil {
 		return "", err
 	}
@@ -57,7 +59,7 @@ func buildNoDifferenceMsg(filename string) (string, error) {
 	}
 	b := make([]byte, 128)
 	count, err := file.Read(b)
-	if err != nil && err != io.EOF {
+	if err != nil && !errors.Is(err, io.EOF) {
 		return "", err
 	}
 	o := string(strings.TrimRight(string(b[0:count]), "\r\n"))

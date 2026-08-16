@@ -84,10 +84,10 @@ func createTempFile(t *testing.T, content string) (*os.File, func()) {
 	}
 }
 
-func TestRun(t *testing.T) {
+func TestCheck(t *testing.T) {
 	opt, file := getCmdOpt(t, "echo", []string{"Hello, World!"})
 	defer file.Close()
-	ckr := opt.run()
+	ckr := opt.check()
 	if ckr.Status != checkers.OK {
 		t.Errorf("Expected OK status, got %v", ckr.Status)
 	}
@@ -95,8 +95,8 @@ func TestRun(t *testing.T) {
 		t.Errorf("Expected first time execution message, got %q", ckr.Message)
 	}
 
-	// Run again to check for no difference
-	ckr = opt.run()
+	// Check again to check for no difference
+	ckr = opt.check()
 	if ckr.Status != checkers.OK {
 		t.Errorf("Expected OK status, got %v", ckr.Status)
 	}
@@ -105,16 +105,16 @@ func TestRun(t *testing.T) {
 	}
 }
 
-func TestRunWithDifference(t *testing.T) {
+func TestCheckWithDifference(t *testing.T) {
 	opt, file := getCmdOpt(t, "date", []string{})
 	defer file.Close()
-	// First run to create the initial state
-	opt.run()
+	// First check to create the initial state
+	opt.check()
 
 	// Change the command to produce a different output
 	time.Sleep(2 * time.Second) // Ensure the date command produces a different output
 	opt.Command = "date"
-	ckr := opt.run()
+	ckr := opt.check()
 	if ckr.Status != checkers.CRITICAL {
 		t.Errorf("Expected CRITICAL status, got %v", ckr.Status)
 	}
