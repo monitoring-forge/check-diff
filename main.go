@@ -34,5 +34,5 @@ func (opt *Opt) Run(args []string) *checkers.Checker {
 }
 
 func main() {
-	os.Exit(flagrun.Check(&Opt{}, flagrun.Version(version)))
+	os.Exit(flagrun.Check(&Opt{}, flagrun.Version(version), flagrun.ArgsRequired()))
 }
