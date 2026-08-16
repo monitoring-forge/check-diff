@@ -1,10 +1,9 @@
 VERSION=0.0.7
-GITCOMMIT?=$(shell git describe --dirty --always)
-LDFLAGS=-ldflags "-w -s -X main.version=${VERSION} -X main.commit=${GITCOMMIT}"
+LDFLAGS=-ldflags "-w -s -X main.version=${VERSION}"
 
 all: check-diff
 
-.PHONY: check-diff
+.PHONY: check-diff lint check linux
 
 check-diff: *.go
 	go build $(LDFLAGS) -o check-diff
