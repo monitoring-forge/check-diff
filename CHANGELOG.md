@@ -1,5 +1,11 @@
 # Changelog
 
+## [v0.0.8](https://github.com/monitoring-forge/check-diff/compare/v0.0.7...v0.0.8) - 2026-08-16
+
+- ci: bump the-pr-agent/pr-agent from 0.41.0 to 0.41.1 in the dependencies group by @dependabot[bot] in https://github.com/monitoring-forge/check-diff/pull/13
+- Sync files with `monitoring-forge/github-common` by @monitoring-forge-files-sync-action[bot] in https://github.com/monitoring-forge/check-diff/pull/14
+- refactor: create check.go, use flagrun and seferio by @kazeburo in https://github.com/monitoring-forge/check-diff/pull/15
+
 ## [v0.0.7](https://github.com/monitoring-forge/check-diff/compare/v0.0.6...v0.0.7) - 2026-08-05
 
 - ci: bump actions/checkout from 7.0.0 to 7.0.1 in the dependencies group by @dependabot[bot] in https://github.com/monitoring-forge/check-diff/pull/7
