@@ -31,13 +31,8 @@ func (opt *Opt) cmd(file *os.File) error {
 
 func (opt *Opt) check() *checkers.Checker {
 
-	identifier := strings.Join([]string{
-		opt.Identifier,
-		opt.Command,
-		strings.Join(opt.Args, "-"),
-	}, "-")
 	hasher := sha256.New()
-	hasher.Write([]byte(identifier))
+	fmt.Fprintf(hasher, "%s\x00%s\x00%s", opt.Identifier, opt.Command, strings.Join(opt.Args, "\x00"))
 
 	curUser, err := user.Current()
 	if err != nil {
@@ -50,10 +45,13 @@ func (opt *Opt) check() *checkers.Checker {
 		return checkers.Critical(err.Error())
 	}
 
+	defer func() {
+		_ = newFile.Close()
+		_ = os.Remove(newFile.Name())
+	}()
+
 	err = opt.cmd(newFile)
 	if err != nil {
-		newFile.Close()
-		_ = os.Remove(newFile.Name())
 		return checkers.Critical(err.Error())
 	}
 
