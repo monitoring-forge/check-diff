@@ -1,5 +1,14 @@
 # Changelog
 
+## [v0.0.9](https://github.com/monitoring-forge/check-diff/compare/v0.0.8...v0.0.9) - 2026-09-08
+
+- Sync files with `monitoring-forge/github-common` by @monitoring-forge-files-sync-action[bot] in https://github.com/monitoring-forge/check-diff/pull/18
+- go: bump github.com/monitoring-forge/flagrun from 0.0.7 to 0.0.8 in the dependencies group by @dependabot[bot] in https://github.com/monitoring-forge/check-diff/pull/19
+- ci: bump the-pr-agent/pr-agent from 0.42.0 to 0.43.0 in the dependencies group across 1 directory by @dependabot[bot] in https://github.com/monitoring-forge/check-diff/pull/17
+- Sync files with `monitoring-forge/github-common` by @monitoring-forge-files-sync-action[bot] in https://github.com/monitoring-forge/check-diff/pull/21
+- ci: bump Songmu/tagpr from 1.20.1 to 1.20.2 in the dependencies group across 1 directory by @dependabot[bot] in https://github.com/monitoring-forge/check-diff/pull/23
+- go: bump the dependencies group across 1 directory with 2 updates by @dependabot[bot] in https://github.com/monitoring-forge/check-diff/pull/24
+
 ## [v0.0.8](https://github.com/monitoring-forge/check-diff/compare/v0.0.7...v0.0.8) - 2026-08-16
 
 - ci: bump the-pr-agent/pr-agent from 0.41.0 to 0.41.1 in the dependencies group by @dependabot[bot] in https://github.com/monitoring-forge/check-diff/pull/13
