@@ -71,9 +71,18 @@ func (opt *Opt) check() *checkers.Checker {
 		return checkers.Ok(fmt.Sprintf("first time execution command: '%s'", opt.Command))
 	}
 
-	diff, err := diff(filepath.Join(opt.Workdir, prevFileName), newFile.Name())
-	if err != nil {
-		return checkers.Critical(err.Error())
+	textdiff := ""
+	var errDiff error
+	if opt.JSON {
+		textdiff, errDiff = diffJson(filepath.Join(opt.Workdir, prevFileName), newFile.Name(), opt.jq)
+		if errDiff != nil {
+			return checkers.Critical(errDiff.Error())
+		}
+	} else {
+		textdiff, errDiff = diff(filepath.Join(opt.Workdir, prevFileName), newFile.Name())
+		if errDiff != nil {
+			return checkers.Critical(errDiff.Error())
+		}
 	}
 
 	err = os.Rename(newFile.Name(), filepath.Join(opt.Workdir, prevFileName))
@@ -81,7 +90,7 @@ func (opt *Opt) check() *checkers.Checker {
 		return checkers.Critical(err.Error())
 	}
 
-	if diff == "" {
+	if textdiff == "" {
 		msg, err := buildNoDifferenceMsg(filepath.Join(opt.Workdir, prevFileName))
 		if err != nil {
 			return checkers.Critical(err.Error())
@@ -89,7 +98,7 @@ func (opt *Opt) check() *checkers.Checker {
 		return checkers.Ok(msg)
 	}
 
-	diffMsg := buildDiffMsg(diff)
+	diffMsg := buildDiffMsg(textdiff)
 	if opt.Warn {
 		return checkers.Warning(diffMsg)
 	}
