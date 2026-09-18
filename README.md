@@ -23,6 +23,8 @@ Application Options:
   -w, --warn        Set the error level to warning
       --identifier= Identify the file used to store the command result with the given string
       --workdir=    Set the working directory
+  -j, --json        Calculate the diff treating the command output as JSON
+      --json-ignore= jq query to ignore structures in the JSON output
   -v, --version     Show version
 
 Help Options:
@@ -87,6 +89,22 @@ Change the directory where the previous output is stored. By default, the plugin
 
 ```sh
 ./check-diff --workdir=/var/lib/check-diff -- cat /etc/passwd
+```
+
+### `-j`, `--json`
+
+Calculate the diff treating the command output as JSON. The output is normalized to sorted, compact JSON before comparison, so differences in formatting or key order are ignored.
+
+```sh
+./check-diff -j -- cat /path/to/file.json
+```
+
+### `--json-ignore`
+
+Specify a jq query to ignore parts of the JSON structure when comparing. Only values selected by the query are excluded from the diff; the rest of the output is still compared as JSON. This option requires `--json`.
+
+```sh
+./check-diff -j --json-ignore='.timestamp' -- some-json-command
 ```
 
 ## Mackerel configuration example
