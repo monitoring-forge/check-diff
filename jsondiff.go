@@ -23,11 +23,11 @@ func diffJsonInput(path, name string) (*jsondiff.Input, error) {
 }
 
 func diffJson(prevFilePath, newFilePath string, jq *gojq.Query) (string, error) {
-	prev, err := diffJsonInput(prevFilePath, "prev")
+	prevDiff, err := diffJsonInput(prevFilePath, "prev")
 	if err != nil {
 		return "", err
 	}
-	new, err := diffJsonInput(newFilePath, "new")
+	newDiff, err := diffJsonInput(newFilePath, "new")
 	if err != nil {
 		return "", err
 	}
@@ -36,7 +36,7 @@ func diffJson(prevFilePath, newFilePath string, jq *gojq.Query) (string, error) 
 	if jq != nil {
 		options = append(options, jsondiff.Ignore(jq))
 	}
-	diff, err := jsondiff.Diff(prev, new, options...)
+	diff, err := jsondiff.Diff(prevDiff, newDiff, options...)
 	if err != nil {
 		return "", err
 	}
