@@ -43,7 +43,9 @@ func diffJson(prevFilePath, newFilePath string, jq *gojq.Query) (string, error) 
 	if diff == "" {
 		return "", nil
 	}
-	split := strings.Split(diff, "\n")
-	split = split[2 : len(split)-1]
-	return strings.Join(split, "\n"), nil
+	split := strings.Split(strings.TrimSuffix(diff, "\n"), "\n")
+	if len(split) < 3 || !strings.HasPrefix(split[0], "--- ") || !strings.HasPrefix(split[1], "+++ ") {
+		return diff, nil
+	}
+	return strings.Join(split[2:], "\n"), nil
 }

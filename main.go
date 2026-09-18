@@ -25,6 +25,9 @@ type Opt struct {
 }
 
 func (opt *Opt) Validate(args []string) error {
+	if len(args) == 0 {
+		return fmt.Errorf("a command is required")
+	}
 	opt.Args = []string{}
 	opt.Command = args[0]
 	if len(args) > 1 {
