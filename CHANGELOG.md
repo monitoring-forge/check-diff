@@ -1,5 +1,12 @@
 # Changelog
 
+## [v0.0.10](https://github.com/monitoring-forge/check-diff/compare/v0.0.9...v0.0.10) - 2026-10-11
+
+- Sync files with `monitoring-forge/github-common` by @monitoring-forge-files-sync-action[bot] in https://github.com/monitoring-forge/check-diff/pull/27
+- ci: bump Songmu/tagpr from 1.20.3 to 1.21.0 in the dependencies group by @dependabot[bot] in https://github.com/monitoring-forge/check-diff/pull/28
+- Sync files with `monitoring-forge/github-common` by @monitoring-forge-files-sync-action[bot] in https://github.com/monitoring-forge/check-diff/pull/30
+- go: bump github.com/itchyny/timefmt-go from 0.1.8 to 0.1.9 in the dependencies group across 1 directory by @dependabot[bot] in https://github.com/monitoring-forge/check-diff/pull/32
+
 ## [v0.0.9](https://github.com/monitoring-forge/check-diff/compare/v0.0.8...v0.0.9) - 2026-09-18
 
 - Sync files with `monitoring-forge/github-common` by @monitoring-forge-files-sync-action[bot] in https://github.com/monitoring-forge/check-diff/pull/18
