@@ -24,5 +24,5 @@ require (
 	github.com/mackerelio/golib v1.2.2
 	github.com/monitoring-forge/flagrun v0.0.10
 	github.com/monitoring-forge/saferio v0.0.3
-	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/sys v0.49.0 // indirect
 )
