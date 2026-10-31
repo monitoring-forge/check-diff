@@ -16,7 +16,7 @@ require (
 require (
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/itchyny/timefmt-go v0.1.9 // indirect
-	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	go.yaml.in/yaml/v3 v3.0.6 // indirect
 )
 
 require (
