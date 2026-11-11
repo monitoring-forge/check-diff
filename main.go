@@ -17,6 +17,7 @@ type Opt struct {
 	Command         string
 	Identifier      string `long:"identifier" description:"identify the file used to store the command result with the given string"`
 	Warn            bool   `short:"w" long:"warn" description:"Set the error level to warning"`
+	Invert          bool   `long:"invert" description:"Alert when there is no difference instead of when there is a difference"`
 	Workdir         string `long:"workdir" description:"Set the working directory"`
 	Version         bool   `short:"v" long:"version" description:"Show version"`
 	JSON            bool   `short:"j" long:"json" description:"Calculate the diff treating the command output as JSON"`

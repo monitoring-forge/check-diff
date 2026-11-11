@@ -21,6 +21,7 @@ Usage:
 
 Application Options:
   -w, --warn        Set the error level to warning
+      --invert      Alert when there is no difference instead of when there is a difference
       --identifier= Identify the file used to store the command result with the given string
       --workdir=    Set the working directory
   -j, --json        Calculate the diff treating the command output as JSON
@@ -68,10 +69,18 @@ check-diff CRITICAL: found difference: ```@@ -1 +1 @@
 
 ### `-w`, `--warn`
 
-Report differences as `WARNING` instead of `CRITICAL`.
+Report alerts as `WARNING` instead of `CRITICAL`.
 
 ```sh
 ./check-diff -w -- cat /path/to/file
+```
+
+### `--invert`
+
+Report `CRITICAL` when the output is unchanged and `OK` when it differs. Use `-w` to report `WARNING` instead of `CRITICAL`. The first run still returns `OK`, and errors are still reported as `CRITICAL`.
+
+```sh
+./check-diff --invert -- cat /path/to/file
 ```
 
 ### `--identifier`

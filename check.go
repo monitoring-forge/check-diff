@@ -90,17 +90,22 @@ func (opt *Opt) check() *checkers.Checker {
 		return checkers.Critical(err.Error())
 	}
 
+	var msg string
 	if textdiff == "" {
-		msg, err := buildNoDifferenceMsg(filepath.Join(opt.Workdir, prevFileName))
+		msg, err = buildNoDifferenceMsg(filepath.Join(opt.Workdir, prevFileName))
 		if err != nil {
 			return checkers.Critical(err.Error())
 		}
+	} else {
+		msg = buildDiffMsg(textdiff)
+	}
+
+	if (textdiff != "") == opt.Invert {
 		return checkers.Ok(msg)
 	}
 
-	diffMsg := buildDiffMsg(textdiff)
 	if opt.Warn {
-		return checkers.Warning(diffMsg)
+		return checkers.Warning(msg)
 	}
-	return checkers.Critical(diffMsg)
+	return checkers.Critical(msg)
 }
