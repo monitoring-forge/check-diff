@@ -122,3 +122,65 @@ func TestCheckWithDifference(t *testing.T) {
 		t.Errorf("Expected found difference message, got %q", ckr.Message)
 	}
 }
+
+func TestCheckInvert(t *testing.T) {
+	tests := []struct {
+		name        string
+		json        bool
+		ignore      string
+		warn        bool
+		initial     string
+		unchanged   string
+		changed     string
+		alertStatus checkers.Status
+	}{
+		{"text critical", false, "", false, "first\n", "first\n", "second\n", checkers.CRITICAL},
+		{"text warning", false, "", true, "first\n", "first\n", "second\n", checkers.WARNING},
+		{"json ignore critical", true, ".timestamp", false, `{"value":1,"timestamp":1}`, `{"timestamp":2,"value":1}`, `{"value":2,"timestamp":3}`, checkers.CRITICAL},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			input := filepath.Join(dir, "input")
+			write := func(content string) {
+				t.Helper()
+				if err := os.WriteFile(input, []byte(content), 0600); err != nil {
+					t.Fatal(err)
+				}
+			}
+			opt := Opt{Workdir: dir, Invert: true, Warn: tt.warn, JSON: tt.json, JSONIgnoreQuery: tt.ignore}
+			if err := opt.Validate([]string{"cat", input}); err != nil {
+				t.Fatal(err)
+			}
+
+			write(tt.initial)
+			if ckr := opt.check(); ckr.Status != checkers.OK || !strings.Contains(ckr.Message, "first time execution") {
+				t.Fatalf("first run: got %v: %s", ckr.Status, ckr.Message)
+			}
+			write(tt.unchanged)
+			if ckr := opt.check(); ckr.Status != tt.alertStatus || !strings.Contains(ckr.Message, "no difference") {
+				t.Errorf("unchanged: got %v: %s", ckr.Status, ckr.Message)
+			}
+			write(tt.changed)
+			if ckr := opt.check(); ckr.Status != checkers.OK || !strings.Contains(ckr.Message, "found difference") {
+				t.Errorf("changed: got %v: %s", ckr.Status, ckr.Message)
+			}
+			if ckr := opt.check(); ckr.Status != tt.alertStatus || !strings.Contains(ckr.Message, "no difference") {
+				t.Errorf("unchanged after change: got %v: %s", ckr.Status, ckr.Message)
+			}
+			if tt.json {
+				write("not json")
+				if ckr := opt.check(); ckr.Status != checkers.CRITICAL {
+					t.Errorf("invalid JSON: got %v: %s", ckr.Status, ckr.Message)
+				}
+			}
+			if err := os.Remove(input); err != nil {
+				t.Fatal(err)
+			}
+			if ckr := opt.check(); ckr.Status != checkers.CRITICAL {
+				t.Errorf("command error: got %v: %s", ckr.Status, ckr.Message)
+			}
+		})
+	}
+}
