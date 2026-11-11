@@ -14,15 +14,16 @@ require (
 )
 
 require (
+	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/hexops/gotextdiff v1.0.3 // indirect
 	github.com/itchyny/timefmt-go v0.1.9 // indirect
-	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	go.yaml.in/yaml/v3 v3.0.6 // indirect
 )
 
 require (
 	github.com/aereal/jsondiff v0.4.1
 	github.com/mackerelio/golib v1.2.2
-	github.com/monitoring-forge/flagrun v0.0.10
+	github.com/monitoring-forge/flagrun v0.0.11
 	github.com/monitoring-forge/saferio v0.0.3
 	golang.org/x/sys v0.49.0 // indirect
 )
