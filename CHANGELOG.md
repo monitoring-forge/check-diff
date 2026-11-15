@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.0.11](https://github.com/monitoring-forge/check-diff/compare/v0.0.10...v0.0.11) - 2026-11-15
+
+- ci: bump Songmu/tagpr from 1.21.4 to 1.22.0 in the tagpr group by @dependabot[bot] in https://github.com/monitoring-forge/check-diff/pull/42
+- go: bump the dependencies group with 3 updates by @dependabot[bot] in https://github.com/monitoring-forge/check-diff/pull/43
+
 ## [v0.0.10](https://github.com/monitoring-forge/check-diff/compare/v0.0.9...v0.0.10) - 2026-11-11
 
 - Sync files with `monitoring-forge/github-common` by @monitoring-forge-files-sync-action[bot] in https://github.com/monitoring-forge/check-diff/pull/27
