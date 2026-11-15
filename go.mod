@@ -9,7 +9,7 @@ require (
 
 require (
 	github.com/cubicdaiya/gonp v1.0.4
-	github.com/itchyny/gojq v0.12.19
+	github.com/itchyny/gojq v0.12.20
 	github.com/stretchr/testify v1.12.1
 )
 
@@ -24,6 +24,6 @@ require (
 	github.com/aereal/jsondiff v0.4.1
 	github.com/mackerelio/golib v1.2.2
 	github.com/monitoring-forge/flagrun v0.0.11
-	github.com/monitoring-forge/saferio v0.0.3
-	golang.org/x/sys v0.49.0 // indirect
+	github.com/monitoring-forge/saferio v0.0.4
+	golang.org/x/sys v0.50.0 // indirect
 )
